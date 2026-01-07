@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'packet_loss_page.dart';
-import 'speed_test_page.dart';
+import 'network_strength_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -32,17 +32,19 @@ class HomePage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              "Check speed & packet loss easily",
+              "Check network strength & packet loss easily",
               style: TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 40),
 
             PopupMenuButton<String>(
               onSelected: (value) {
-                if (value == "speed") {
+                if (value == "strength") {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const SpeedTestPage()),
+                    MaterialPageRoute(
+                      builder: (_) => const NetworkStrengthPage(),
+                    ),
                   );
                 } else if (value == "packet") {
                   Navigator.push(
@@ -53,10 +55,10 @@ class HomePage extends StatelessWidget {
               },
               itemBuilder: (context) => const [
                 PopupMenuItem(
-                  value: "speed",
+                  value: "strength",
                   child: ListTile(
-                    leading: Icon(Icons.speed),
-                    title: Text("Internet Speed Test"),
+                    leading: Icon(Icons.signal_cellular_alt),
+                    title: Text("Network Strength Test"),
                   ),
                 ),
                 PopupMenuItem(
