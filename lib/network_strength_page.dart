@@ -5,8 +5,6 @@ class NetworkStrengthPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: Text("Network Strength Coming Soon")),
-    );
+    return const Scaffold(body: Center(child: Text("Speed Test Coming Soon")));
   }
 }
