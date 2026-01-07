@@ -1,48 +1,47 @@
-package com.example.networktest
-
-import androidx.annotation.NonNull
-import io.flutter.embedding.android.FlutterActivity
-import io.flutter.embedding.engine.FlutterEngine
-import io.flutter.plugin.common.MethodChannel
-
 class MainActivity : FlutterActivity() {
 
-    private val CHANNEL = "network_tools"
+    private val CHANNEL = "wifi_signal_channel"
+    private var channel: MethodChannel? = null
 
-    override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        MethodChannel(
+        channel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             CHANNEL
-        ).setMethodCallHandler { call, result ->
+        )
 
-            if (call.method == "pingTest") {
-                val host = call.argument<String>("host") ?: "8.8.8.8"
-                val count = call.argument<Int>("count") ?: 10
-
+        channel?.setMethodCallHandler { call, result ->
+            if (call.method == "getWifiSignalStrength") {
                 try {
-                    val process = Runtime.getRuntime().exec(
-                        arrayOf("ping", "-c", count.toString(), host)
-                    )
+                    val wifiManager =
+                        applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
-                    val output = process.inputStream.bufferedReader().readText()
-                    process.waitFor()
+                    val wifiInfo = wifiManager.connectionInfo
+                    if(wifiInfo == null || wifiInfo.ssid == "<unknown ssid>"){
+                        result.error("NO_WIFI", "Not connected to wi-fi", null)
+                        return@setMethodCallHandler
+                    }
+                    val rssi = wifiInfo?.rssi ?: -100
+                    val ssid = wifiInfo?.ssid ?: "Unknown"
 
-                    val regex = Regex("(\\d+)% packet loss")
-                    val match = regex.find(output)
+                    val response = HashMap<String, Any>()
+                    response["rssi"] = rssi
+                    response["ssid"] = ssid.replace("\"", "")
 
-                    val packetLoss =
-                        match?.groupValues?.get(1)?.toInt() ?: -1
-
-                    result.success(packetLoss)
-
+                    result.success(response)
                 } catch (e: Exception) {
-                    result.error("PING_FAILED", e.message, null)
+                    result.error("WIFI_ERROR", e.message, null)
                 }
             } else {
                 result.notImplemented()
             }
         }
+    }
+
+    override fun onDestroy() {
+        channel?.setMethodCallHandler(null)
+        channel = null
+        super.onDestroy()
     }
 }
