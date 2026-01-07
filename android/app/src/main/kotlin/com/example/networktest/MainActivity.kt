@@ -1,3 +1,12 @@
+package com.example.networktest
+
+import androidx.annotation.NonNull
+import android.content.Context
+import android.net.wifi.WifiManager
+import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+
 class MainActivity : FlutterActivity() {
 
     private val CHANNEL = "wifi_signal_channel"
