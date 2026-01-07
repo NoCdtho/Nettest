@@ -13,8 +13,10 @@ class _PacketLossPageState extends State<PacketLossPage> {
 
   String result = "Not tested";
   bool isLoading = false;
+  bool isRunning = false;
 
   Future<void> runPing() async {
+    
     setState(() => isLoading = true);
 
     try {
@@ -32,6 +34,8 @@ class _PacketLossPageState extends State<PacketLossPage> {
         result = "Ping failed";
         isLoading = false;
       });
+    } finally {
+      setState(() => isRunning = false);
     }
   }
 
@@ -46,10 +50,17 @@ class _PacketLossPageState extends State<PacketLossPage> {
             Text(result, style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: isLoading ? null : runPing,
-              child: isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("Run Ping Test"),
+              onPressed: isRunning ? null : runPing,
+              child: isRunning
+                   ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text("Run Ping Test"),
             ),
           ],
         ),
