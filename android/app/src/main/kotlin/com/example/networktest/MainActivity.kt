@@ -1,4 +1,4 @@
-package com.example.nettest
+package com.example.networktest
 
 import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
