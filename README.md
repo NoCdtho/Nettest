@@ -1,16 +1,13 @@
 # ns2
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+features
+This code creates one Flutter screen called NetworkStrengthPage that:
+Checks whether Wi-Fi is connected
+If connected:
+Reads real Wi-Fi RSSI (signal strength in dBm) from Android
+Converts RSSI → percentage (0–100%)
+Measures real internet latency (ping) using an HTTP request
+Classifies network quality as Excellent / Good / Fair / Poor
+If NOT connected:
+Clearly tells the user “You are not connected to Wi-Fi”
+Does NOT show fake values
