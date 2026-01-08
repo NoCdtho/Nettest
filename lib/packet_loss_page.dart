@@ -24,7 +24,6 @@ class _PacketLossFrontPageState extends State<PacketLossPage> {
   @override
   void initState() {
     super.initState();
-    startAutoTest();
   }
 
   void startAutoTest() {
@@ -58,7 +57,6 @@ class _PacketLossFrontPageState extends State<PacketLossPage> {
   void dispose() {
     _timer?.cancel();
     super.dispose();
-    stopAutoTest();
   }
 
   Future<void> runPacketLossTest() async {
