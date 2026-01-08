@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class SpeedTestPage extends StatelessWidget {
-  const SpeedTestPage({super.key});
+class NetworkStrengthPage extends StatelessWidget {
+  const NetworkStrengthPage({super.key});
 
   @override
   Widget build(BuildContext context) {
