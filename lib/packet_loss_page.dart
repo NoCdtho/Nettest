@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -12,11 +13,51 @@ class _PacketLossFrontPageState extends State<PacketLossPage> {
   static const MethodChannel _channel = MethodChannel('network_tools');
 
   bool isLoading = false;
+  bool isRunning = false;
+  Timer? _timer;
 
   int packetsSent = 0;
   int packetsLost = 0;
   double packetLossPercent = 0.0;
   String networkStatus = "Unknown";
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void startAutoTest() {
+    if (isRunning) return;
+
+    isRunning = true;
+
+    runPacketLossTest(); //do a test when buttom is clicked
+
+    _timer = Timer.periodic(const Duration(seconds: 10), (timer) async {
+      if (!isLoading && mounted) {
+        await runPacketLossTest();
+      }
+    });
+
+    setState(() {});
+  }
+
+  void stopAutoTest() {
+    _timer?.cancel();
+    _timer = null;
+    isRunning = false;
+    isLoading = false;
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   Future<void> runPacketLossTest() async {
     const int count = 10;
@@ -51,6 +92,7 @@ class _PacketLossFrontPageState extends State<PacketLossPage> {
       networkStatus = "Test Failed";
     }
 
+    if (!mounted) return;
     setState(() {
       isLoading = false;
     });
@@ -126,31 +168,35 @@ class _PacketLossFrontPageState extends State<PacketLossPage> {
 
               // Button
               Center(
-                child: ElevatedButton(
-                  onPressed: isLoading ? null : runPacketLossTest,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          "Run Packet Loss Test",
-                          style: TextStyle(fontSize: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: isRunning ? null : startAutoTest,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 14,
                         ),
+                      ),
+                      child: const Text("START"),
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    ElevatedButton(
+                      onPressed: isRunning ? stopAutoTest : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 14,
+                        ),
+                      ),
+                      child: const Text("STOP"),
+                    ),
+                  ],
                 ),
               ),
             ],
