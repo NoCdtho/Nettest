@@ -1,5 +1,7 @@
 package com.example.networktest
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.util.Log
 import android.content.Context
 import android.content.BroadcastReceiver
@@ -7,6 +9,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.net.ConnectivityManager
 import android.net.wifi.WifiManager
+import android.os.Build
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -16,6 +21,7 @@ class MainActivity : FlutterActivity() {
 
     private val CHANNEL = "network_tools"
     private val EVENT_CHANNEL = "network_tools/stream"
+    private val LOCATION_PERMISSION_REQUEST = 100
     
     private var wifiManager: WifiManager? = null
     private var wifiReceiver: BroadcastReceiver? = null
@@ -66,7 +72,7 @@ class MainActivity : FlutterActivity() {
                         val bssid = wifiInfo.bssid ?: "Unknown"
                         val rssi = wifiInfo.rssi
                         val linkSpeed = wifiInfo.linkSpeed
-                        val frequency = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                        val frequency = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                             wifiInfo.frequency
                         } else {
                             0
@@ -94,29 +100,113 @@ class MainActivity : FlutterActivity() {
                     }
                 }
 
-                /* ---------------- Scan WiFi Networks ---------------- */
+                /* ---------------- Scan WiFi Networks (COMPREHENSIVE FIX) ---------------- */
                 "scanWifiNetworks" -> {
-                    val success = wifiManager?.startScan() ?: false
-                    if (success) {
-                        // Wait a bit for scan to complete
-                        Thread {
-                            Thread.sleep(2000)
-                            val scanResults = wifiManager?.scanResults ?: emptyList()
-                            val networks = scanResults.map { scanResult ->
-                                mapOf(
-                                    "ssid" to scanResult.SSID,
-                                    "bssid" to scanResult.BSSID,
-                                    "level" to scanResult.level,
-                                    "frequency" to scanResult.frequency,
-                                    "capabilities" to scanResult.capabilities
-                                )
+                    Log.d("NET_TEST", "=== SCAN WIFI NETWORKS CALLED ===")
+
+                    // Step 1: Check if WiFi is enabled
+                    if (wifiManager?.isWifiEnabled == false) {
+                        Log.e("NET_TEST", "WiFi is disabled")
+                        result.error("WIFI_DISABLED", "WiFi is turned off", null)
+                        return@setMethodCallHandler
+                    }
+                    Log.d("NET_TEST", "WiFi is enabled")
+
+                    // Step 2: Check location permission
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val hasPermission = ContextCompat.checkSelfPermission(
+                            this,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                        Log.d("NET_TEST", "Location permission: $hasPermission")
+
+                        if (!hasPermission) {
+                            Log.e("NET_TEST", "Location permission not granted")
+                            result.error(
+                                "PERMISSION_DENIED",
+                                "Location permission is required for WiFi scanning",
+                                null
+                            )
+                            return@setMethodCallHandler
+                        }
+                    }
+
+                    // Step 3: Get cached scan results first
+                    Log.d("NET_TEST", "Getting cached scan results...")
+                    try {
+                        val cachedResults = wifiManager?.scanResults
+                        Log.d("NET_TEST", "Cached results count: ${cachedResults?.size ?: 0}")
+                        
+                        if (cachedResults != null) {
+                            cachedResults.forEach { scanResult ->
+                                Log.d("NET_TEST", "Cached: ${scanResult.SSID} - ${scanResult.level} dBm")
                             }
-                            runOnUiThread {
-                                result.success(networks)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("NET_TEST", "Error reading cached results: ${e.message}")
+                    }
+
+                    // Step 4: Trigger new scan and wait
+                    Log.d("NET_TEST", "Starting new scan...")
+                    try {
+                        val scanStarted = wifiManager?.startScan() ?: false
+                        Log.d("NET_TEST", "Scan triggered: $scanStarted")
+
+                        // Wait for scan to complete
+                        Thread {
+                            try {
+                                Log.d("NET_TEST", "Waiting 4 seconds for scan completion...")
+                                Thread.sleep(4000)
+                                
+                                runOnUiThread {
+                                    try {
+                                        val scanResults = wifiManager?.scanResults
+                                        Log.d("NET_TEST", "Final scan results count: ${scanResults?.size ?: 0}")
+
+                                        if (scanResults == null || scanResults.isEmpty()) {
+                                            Log.w("NET_TEST", "No networks found after scan")
+                                            result.success(emptyList<Map<String, Any>>())
+                                            return@runOnUiThread
+                                        }
+
+                                        val networks = scanResults.map { scanResult ->
+                                            val ssid = if (scanResult.SSID.isNullOrEmpty()) "Hidden Network" else scanResult.SSID
+                                            Log.d("NET_TEST", "Network: $ssid, Level: ${scanResult.level}, Freq: ${scanResult.frequency}")
+                                            
+                                            mapOf(
+                                                "ssid" to ssid,
+                                                "bssid" to scanResult.BSSID,
+                                                "level" to scanResult.level,
+                                                "frequency" to scanResult.frequency,
+                                                "capabilities" to scanResult.capabilities
+                                            )
+                                        }
+                                        
+                                        Log.d("NET_TEST", "Returning ${networks.size} networks to Flutter")
+                                        result.success(networks)
+                                        
+                                    } catch (e: SecurityException) {
+                                        Log.e("NET_TEST", "SecurityException getting scan results: ${e.message}")
+                                        result.error("PERMISSION_ERROR", "Permission denied: ${e.message}", null)
+                                    } catch (e: Exception) {
+                                        Log.e("NET_TEST", "Error getting scan results: ${e.message}")
+                                        e.printStackTrace()
+                                        result.error("SCAN_ERROR", e.message, null)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e("NET_TEST", "Thread error: ${e.message}")
+                                runOnUiThread {
+                                    result.error("SCAN_ERROR", e.message, null)
+                                }
                             }
                         }.start()
-                    } else {
-                        result.success(emptyList<Map<String, Any>>())
+
+                    } catch (e: Exception) {
+                        Log.e("NET_TEST", "Scan exception: ${e.message}")
+                        e.printStackTrace()
+                        result.error("SCAN_ERROR", e.message, null)
                     }
                 }
 
