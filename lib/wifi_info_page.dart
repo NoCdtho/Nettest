@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class WiFiInfoPage extends StatefulWidget {
   const WiFiInfoPage({super.key});
@@ -15,6 +16,7 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
   bool isScanning = false;
   bool isConnected = false;
   bool isLoading = true;
+  bool hasLocationPermission = false;
 
   // Current WiFi Info
   String ssid = "Not Connected";
@@ -35,9 +37,75 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
 
   Future<void> _initialize() async {
     await _loadCurrentWiFiInfo();
+    await _checkAndRequestPermission();
     setState(() {
       isLoading = false;
     });
+    
+    // Auto-scan if permission granted
+    if (hasLocationPermission) {
+      await _scanNetworks();
+    }
+  }
+
+  Future<bool> _checkAndRequestPermission() async {
+    debugPrint("Checking location permission...");
+    
+    // Check current status
+    var status = await Permission.locationWhenInUse.status;
+    debugPrint("Current permission status: $status");
+
+    if (status.isGranted) {
+      setState(() {
+        hasLocationPermission = true;
+      });
+      return true;
+    }
+
+    // Request permission
+    debugPrint("Requesting location permission...");
+    status = await Permission.locationWhenInUse.request();
+    debugPrint("Permission request result: $status");
+
+    if (status.isGranted) {
+      setState(() {
+        hasLocationPermission = true;
+      });
+      _showMessage("Location permission granted!");
+      return true;
+    } else if (status.isPermanentlyDenied) {
+      _showPermissionDialog();
+      return false;
+    } else {
+      _showMessage("Location permission is required to scan WiFi networks");
+      return false;
+    }
+  }
+
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permission Required'),
+        content: const Text(
+          'Location permission is required to scan WiFi networks. '
+          'Please enable it in Settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: const Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadCurrentWiFiInfo() async {
@@ -76,17 +144,54 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
   }
 
   Future<void> _scanNetworks() async {
-    if (isScanning) return;
+    if (isScanning) {
+      debugPrint("Scan already in progress, skipping");
+      return;
+    }
 
+    // Check permission before scanning
+    if (!hasLocationPermission) {
+      debugPrint("No location permission, requesting...");
+      final granted = await _checkAndRequestPermission();
+      if (!granted) {
+        debugPrint("Permission not granted, cannot scan");
+        return;
+      }
+    }
+
+    debugPrint("=== STARTING NETWORK SCAN ===");
+    
     setState(() {
       isScanning = true;
+      availableNetworks.clear();
     });
 
     try {
+      debugPrint("Calling scanWifiNetworks method...");
+      
       final dynamic networks = await _channel.invokeMethod('scanWifiNetworks');
+      
+      debugPrint("Scan complete. Networks received: ${networks?.runtimeType}");
+      debugPrint("Networks data: $networks");
 
-      if (mounted && networks != null) {
+      if (networks == null) {
+        debugPrint("Networks is NULL");
+        if (mounted) {
+          setState(() {
+            isScanning = false;
+          });
+        }
+        return;
+      }
+
+      if (mounted) {
         final List<dynamic> networkList = networks as List<dynamic>;
+        debugPrint("Found ${networkList.length} networks");
+
+        // Debug each network
+        for (var i = 0; i < networkList.length; i++) {
+          debugPrint("Network $i: ${networkList[i]}");
+        }
 
         setState(() {
           availableNetworks = networkList.map((network) {
@@ -104,16 +209,57 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
             (a, b) => (b['level'] as int).compareTo(a['level'] as int),
           );
         });
+        
+        debugPrint("Available networks after processing: ${availableNetworks.length}");
+        
+        if (availableNetworks.isEmpty) {
+          debugPrint("WARNING: No networks found after scan.");
+          _showMessage("No networks found. Make sure WiFi is enabled.");
+        } else {
+          debugPrint("SUCCESS: ${availableNetworks.length} networks available");
+          _showMessage("Found ${availableNetworks.length} networks");
+        }
       }
-    } catch (e) {
-      debugPrint("Error scanning networks: $e");
+    } on PlatformException catch (e) {
+      debugPrint("PlatformException: ${e.code} - ${e.message}");
+      if (mounted) {
+        String message = "Scan failed";
+        if (e.code == 'PERMISSION_DENIED') {
+          message = "Location permission required";
+          setState(() {
+            hasLocationPermission = false;
+          });
+        } else if (e.code == 'WIFI_DISABLED') {
+          message = "Please enable WiFi";
+        } else {
+          message = "Error: ${e.message}";
+        }
+        _showMessage(message);
+      }
+    } catch (e, stackTrace) {
+      debugPrint("ERROR scanning networks: $e");
+      debugPrint("Stack trace: $stackTrace");
+      if (mounted) {
+        _showMessage("Scan error: $e");
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          isScanning = false;
+        });
+        debugPrint("=== SCAN COMPLETE ===");
+      }
     }
+  }
 
-    if (mounted) {
-      setState(() {
-        isScanning = false;
-      });
-    }
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   int _levelToPercent(int level) {
@@ -180,7 +326,12 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
         ),
       ),
       body: RefreshIndicator(
-        onRefresh: _loadCurrentWiFiInfo,
+        onRefresh: () async {
+          await _loadCurrentWiFiInfo();
+          if (hasLocationPermission) {
+            await _scanNetworks();
+          }
+        },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
@@ -339,6 +490,55 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
                 ),
               ),
 
+              // PERMISSION WARNING
+              if (!hasLocationPermission)
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning, color: Colors.orange, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Location Permission Required',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Enable location to scan WiFi networks',
+                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: _checkAndRequestPermission,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
+                        child: const Text('Grant', style: TextStyle(fontSize: 12)),
+                      ),
+                    ],
+                  ),
+                ),
+
               // AVAILABLE NETWORKS
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -355,12 +555,14 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
                     ),
                     const Spacer(),
                     ElevatedButton.icon(
-                      onPressed: isScanning ? null : _scanNetworks,
-                      icon: Icon(Icons.refresh, size: 18),
+                      onPressed: (isScanning || !hasLocationPermission) ? null : _scanNetworks,
+                      icon: const Icon(Icons.refresh, size: 18),
                       label: Text(isScanning ? 'Scanning...' : 'Scan'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
                         foregroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.grey,
+                        disabledForegroundColor: Colors.white70,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 8,
@@ -371,11 +573,16 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
                 ),
               ),
 
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Text(
-                  'Nearby WiFi networks',
-                  style: TextStyle(color: Colors.grey, fontSize: 14),
+                  hasLocationPermission 
+                    ? 'Nearby WiFi networks' 
+                    : 'Grant location permission to scan',
+                  style: TextStyle(
+                    color: hasLocationPermission ? Colors.grey : Colors.orange,
+                    fontSize: 14,
+                  ),
                 ),
               ),
 
@@ -406,6 +613,11 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
                         Text(
                           'No networks found',
                           style: TextStyle(color: Colors.grey.shade600),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          hasLocationPermission ? 'Tap Scan to search' : 'Grant permission first',
+                          style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
                         ),
                       ],
                     ),
