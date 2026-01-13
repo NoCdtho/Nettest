@@ -133,6 +133,14 @@ class _PacketLossFrontPageState extends State<PacketLossPage> {
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
+                  //New back buttom added here
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.black),
+                    onPressed: () => Navigator.pop(context),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(width:12),
                   const Icon(Icons.show_chart, color: Colors.blue, size: 24),
                   const SizedBox(width: 12),
                   const Expanded(
