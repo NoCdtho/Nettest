@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'packet_loss_page.dart';
 import 'network_strength_page.dart';
 import 'wifi_info_page.dart';
+import 'secure_network_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -96,6 +97,23 @@ class HomePage extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Secure Network Card
+                    _buildQuickAccessCard(
+                      context,
+                      'Secure Network',
+                      'Scan for vulnerabilities & threats',
+                      Icons.security,
+                      Colors.red,
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SecureNetworkPage(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
