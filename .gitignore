@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+.idea/
+.metadata/
 
 # Symbolication related
 app.*.symbols
@@ -43,3 +45,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/android/.gradle/
+android/local.properties
+
+# Python
+nettest_backend/venv/
+nettest_backend/__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
