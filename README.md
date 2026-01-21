@@ -1,12 +1,9 @@
-# nettest
+Everything is updated in main branch 
 
-A new Flutter project.
+To check the mitm detection have to run the backend server locally 
+rest of them all are working perfectly 
 
-## Getting Started
 
-Checks the network strength and packet loss in your current internet connection
-
-A few resources to get you started if this is your first Flutter project:
 
 - [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
 - [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
