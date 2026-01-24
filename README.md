@@ -1,13 +1,15 @@
 Everything is updated in main branch 
 
-To check the mitm detection have to run the backend server locally 
-rest of them all are working perfectly 
+To check the mitm detection have to run the backend server locally
+  1)go to the this folder: "\netTesting\Nettest\nettest_backend"
+  2)activate venv:
+  3)python -m venv venv
+  4) venv\Scripts\activate
+  5)python -m uvicorn main:app --host 0.0.0.0 --port 8000
+  
+rest of them all are working perfectly if you just run the app.
+
+just do:
+1)flutter run(by connecting your phone and enabling usb debugging)
 
 
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
