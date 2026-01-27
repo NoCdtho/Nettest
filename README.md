@@ -13,6 +13,6 @@ To check the mitm detection have to run the backend server locally
 rest of them all are working perfectly if you just run the app.
 
 just do:
-1)flutter run(by connecting your phone and enabling usb debugging)
-
-
+1)flutter clean (optional)
+2)flutter build (optional)
+3)flutter run(by connecting your phone and enabling usb debugging)
