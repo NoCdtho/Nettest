@@ -71,7 +71,7 @@ class _SecureNetworkPageState extends State<SecureNetworkPage> {
 
     // FIXED: Match backend parameter names exactly
     final uri = Uri.parse(
-      "http://10.104.50.86:8000/alerts/scan-network"
+      "http://10.67.190.86:8000/alerts/scan-network"
       "?device_ip=$deviceIp"           // CHANGED: ip → device_ip
       // "&gateway_ip=$gatewayIp"         // CHANGED: Added gateway_ip
       "&ssid=${Uri.encodeComponent(ssid)}"
