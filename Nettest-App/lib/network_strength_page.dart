@@ -275,7 +275,7 @@ class _NetworkStrengthPageState extends State<NetworkStrengthPage> {
                                 showDetails = value;
                               });
                             },
-                            activeColor: Colors.blue,
+                            activeThumbColor: Colors.blue,
                           ),
                         ),
                       ],
