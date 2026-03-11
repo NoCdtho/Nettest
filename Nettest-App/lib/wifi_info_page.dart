@@ -347,7 +347,7 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
                   border: Border.all(color: Colors.grey.shade200),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
@@ -378,8 +378,8 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
                             ),
                             decoration: BoxDecoration(
                               color: isConnected
-                                  ? Colors.green.withOpacity(0.1)
-                                  : Colors.grey.withOpacity(0.1),
+                                  ? Colors.green.withValues(alpha: 0.1)
+                                  : Colors.grey.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -496,9 +496,9 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -639,12 +639,12 @@ class _WiFiInfoPageState extends State<WiFiInfoPage> {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: isCurrentNetwork
-                            ? Colors.blue.withOpacity(0.05)
+                            ? Colors.blue.withValues(alpha: 0.05)
                             : Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isCurrentNetwork
-                              ? Colors.blue.withOpacity(0.3)
+                              ? Colors.blue.withValues(alpha: 0.3)
                               : Colors.grey.shade200,
                         ),
                       ),
