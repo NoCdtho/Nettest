@@ -81,4 +81,4 @@ Ensure the mobile device is on the same Wi‑Fi network as your laptop/backend.
 
 ## 📱 Installation
 You can download the latest version of the Nettest app here:
-Download Nettest APK (https://github.com/NoCdtho/Nettest/releases/tag/v1.0.0)
+https://github.com/NoCdtho/Nettest/releases/tag/v1.0.0
