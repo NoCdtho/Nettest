@@ -78,3 +78,7 @@ Ensure the mobile device is on the same Wi‑Fi network as your laptop/backend.
 ## Contributing
 - Fork the repo, create a feature branch, and open a pull request.
 - Please include clear instructions for any new dependencies or configuration changes.
+
+## 📱 Installation
+You can download the latest version of the Nettest app here:
+Download Nettest APK (https://github.com/NoCdtho/Nettest/releases/tag/v1.0.0)
